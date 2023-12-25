@@ -1,0 +1,199 @@
+:root {
+    --bg-color: rgb(235, 235, 135);
+    --bg-color1: rgb(25, 78, 125);
+    --bg-color2: rgb(164, 15, 15);
+    --color: aliceblue;
+}
+* {
+    padding: 0;
+    box-sizing: border-box;
+    text-decoration: none;
+}
+body {
+    font-family:cursive;
+    font-size: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    height: 100vh;
+}
+body > div {
+    flex: 1;
+    background-color: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+    width: 85%;
+}
+header {
+    display: flex;
+    justify-content: center;
+}
+main {
+    flex: 1;
+    display: grid;
+    grid-template: 1fr / 1fr 2fr;
+}
+.sidebar {
+    justify-self: center;
+    width: 100%;
+    padding: 10px 0;
+}
+.sidebar > h3 {
+    padding: 10px;
+    margin: 0;
+    cursor: pointer;
+    transition: background-color 0.5s, color 0.5s, transform 0.5s;
+}
+.sidebar > h3:hover, .sidebar > h3.active {
+    color: var(--color);
+    background-color: var(--bg-color1);
+    transform: scale(1.05, 1.1);
+}
+.content {
+    background-color: var(--bg-color1);
+    padding: 10px;
+    cursor: pointer;
+}
+.content > * {
+    display: grid;
+    grid-template: 1fr / 3fr 1fr;
+    margin: 5px 0;
+    padding: 0 10px;
+    background-color: var(--bg-color);
+}
+.content > form {
+    padding: 10px;
+    row-gap: 10px;
+}
+form > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.content > form label {
+    font-size: large;
+}
+form input, form textarea {
+    font-family: cursive;
+    font-size: 16px;
+    padding: 10px;
+    resize: none;
+}
+.content > form input {
+    width: 80%;
+}
+button {
+    font-family: cursive;
+    place-self: end;
+    padding: 10px 15px;
+    transition: transform 0.5s;
+}
+.project-list-div {
+    transition: transform 0.5s;
+}
+.project-list-div:hover {
+    transform: scale(1.05, 1.1);
+}
+.content > div > h2{
+    align-self: center;
+}
+.content > div > p {
+    align-self: center;
+    justify-self: end;
+}
+.project-list-view {
+    grid-template: 1fr / 1fr;
+    cursor: auto;
+}
+div[data-list], .has-task > div {
+    display:  flex;
+    justify-content: space-between;
+    gap: 5px;
+    align-items: flex-end;
+    padding: 5px;
+    background-color: var(--bg-color1);
+    margin: 5px 0;
+    cursor: pointer;
+}
+div[data-list] {
+    transition: transform 0.5s;
+}
+div[data-list]:hover,
+.close-project-view:hover, .close-desc-form:hover,
+button:hover {
+    transform: scale(1.1, 1.1);
+    background-color: var(--bg-color1);
+    color: var(--color);
+}
+.project-view {
+    cursor: auto;
+}
+.project-view > header {
+    display: flex;
+    justify-content: space-between;
+    cursor: auto;
+}
+.project-view > header > * {
+    margin: 0;
+    padding: 5px;
+}
+.close-project-view, .close-desc-form {
+    margin: 0;
+    transition: transform 0.5s;
+    padding: 5px;
+    cursor: pointer;
+    text-align: end;
+}
+.project-view > div.info {
+    display: grid;
+    grid-template-areas: "col1 col2"
+                         "col3 col3";
+}
+.project-view > div > p:first-child {
+    grid-area: col1;
+}
+.project-view > div > p:first-child + p {
+    grid-area: col2;
+}
+.project-view > div > p:last-child {
+    grid-area: col3;
+}
+.project-view > div > p:last-child > form {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+}
+.new-task-form {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    padding-bottom: 10px;
+}
+.new-task-form > div {
+    padding: 5px;
+}
+.has-task {
+    display: flex;
+    flex-direction: column;
+}
+.has-task > div > p {
+    color: white;
+    margin: 0;
+}
+.delete-project {
+    place-self: center;
+    margin: 5px 0;
+    background-color: rgba(255, 0, 0, 0.797);
+    color: var(--color);
+    font-size: 1em;
+}
+.projects + .project-list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    transition: none;
+}
+footer {
+    display: flex;
+    justify-content: end;
+    padding-right: 5px;
+}
