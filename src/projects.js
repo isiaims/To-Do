@@ -1,7 +1,7 @@
 import { displayTodayProjectData } from "./daily-week";
-import { allProjects, collectProjectsData, dailyProjects, getDailyProjects, toDo, updateRecentProjects } from "./logic";
+import { allProjects, collectProjectsData, dailyProjects, getDailyProjects, toDo,} from "./logic";
 
-function makeFormFields (type, id) {
+export function makeFormFields (type, id) {
     const div = document.createElement('div');
     const label = document.createElement('label');
     label.setAttribute('for', `${id}`);
@@ -24,7 +24,7 @@ function makeFormFields (type, id) {
     }
     return div;
 }
-function makeRadioElems (id, name) {
+export function makeRadioElems (id, name) {
     const div = document.createElement('div');
     const label = document.createElement('label');
     label.setAttribute('for', `${id}`);
@@ -50,6 +50,13 @@ function newProjectForm () {
     form.addEventListener('submit', addNewProjects);
     return form;
 }
+function addNewProjects (e) {
+    collectProjectsData();
+    displayProjectElems();
+
+    e.preventDefault();
+    e.target.reset();
+}
 export function populateProjects (arr = [], target) {
     if (arr.length === 0) {
         target.innerHTML =  `
@@ -67,12 +74,14 @@ export function populateProjects (arr = [], target) {
         }).join('');
     }
 }
-function projectView (targetDiv, proj, target) {
+function projectView (index) {
+    const targetDiv = document.querySelector('.project-list-view');
     targetDiv.innerHTML = '';
     targetDiv.classList.add('project-view');
     const header = document.createElement('header');
     const h2 = document.createElement('h2');
-    h2.innerHTML = (proj.name).toUpperCase();
+    let item = allProjects[index];
+    h2.innerHTML = (item.name).toUpperCase();
     const closeButton = document.createElement('h3');
     closeButton.classList.add('close-project-view');
     closeButton.innerHTML = '&cross;';
@@ -83,37 +92,36 @@ function projectView (targetDiv, proj, target) {
     const due = document.createElement('p');
     const desc = document.createElement('p');
     desc.classList.add('project-description' );
-    if (proj.desc === '') {
+    if (item.desc === '') {
         desc.innerHTML = `
-            <form data-list=${target}>
+            <form data-list=${index}>
                 <div>
                     <label for='desc'>Add Project Description:</label>
                     <textarea name="desc" id="desc" cols="30" rows="3"></textarea>
                 </div>
                 <div>
-                    <p class='close-desc-form' data-list=${target}>&cross;</p>
+                    <p class='close-desc-form' data-list=${index}>&cross;</p>
                     <button type='submit'>Submit</button>
                 </div>
             </form>
         `
-    } else {desc.innerHTML = proj.desc};
+    } else {desc.innerHTML = item.desc};
     div.append(start, due, desc);
     const taskDiv = document.createElement('div');
     taskDiv.classList.add('task-div');
-    populateTaskDiv(proj.task, taskDiv, target);
+    populateTaskDiv(item.task, taskDiv, index);
     const deleteProjectButton = document.createElement('button');
     deleteProjectButton.innerHTML = 'Delete Project';
     deleteProjectButton.classList.add(`delete-project`);
-    deleteProjectButton.setAttribute('data-list', `${target}`);
+    deleteProjectButton.setAttribute('data-list', `${index}`);
     targetDiv.append(header, div, taskDiv, deleteProjectButton);
 
 }
-export function showProject (e, elem, arr = []) {
+export function showProject (e) {
     if ((e.target.matches('div[data-list]')) || (e.target.matches('.close-desc-form'))) {
         const target = e.target;
         const index = target.getAttribute('data-list');
-        let item = arr[index];
-        projectView(elem, item, index);
+        projectView(index);
 
         // Event Listener for setting project description
         document.querySelector('.project-description')
@@ -125,7 +133,7 @@ export function showProject (e, elem, arr = []) {
         .addEventListener('submit', displayProjectTask);
         // Event Listener for closing project view
         document.querySelector('.close-project-view')
-        .addEventListener('click', () => closeProjectView(arr));
+        .addEventListener('click', closeProjectView);
         // Event Listener for deleting project
         document.querySelector('.delete-project')
         .addEventListener('click', deleteProject);
@@ -137,42 +145,21 @@ export function displayProjectTask (e) {
     let index = e.target.getAttribute('data-list');
     populateTaskDiv(allProjects[index].task, e.target.parentNode, index);
 }
-
 export function displayProjectElems () {
     const content = document.querySelector('.content');
     content.innerHTML = '';
     const div = document.createElement('div');
     div.classList.add('project-list-view');
-    div.classList.add('recent-projects');
+    div.classList.add('all-projects');
     div.classList.remove('project-view');
-    const h3 = document.createElement('h3');
-    h3. innerText = 'Recently Added Projects';
-    const projectDiv = document.createElement('div');
-    projectDiv.classList.add('project-list');
-    div.append(h3, projectDiv);
     populateProjects(allProjects, div);
     content.append(newProjectForm(), div);
 
     // Event Listener for displaying recently added project info
     document.querySelectorAll('div[data-list]')
-    .forEach(i => i.addEventListener('click', displayProjectData));
-    
+    .forEach(i => i.addEventListener('click', showProject));
 }
-function addNewProjects (e) {
-    collectProjectsData();
-    displayProjectElems();
-
-    document.querySelectorAll('div[data-list]')
-    .forEach(i => i.addEventListener('click', displayProjectData));
-
-    e.preventDefault();
-    e.target.reset();
-}
-export function displayProjectData(e) {
-    const div = document.querySelector('.project-list-view');
-    showProject(e, div, allProjects);
-}
-function newTaskForm (index) {
+export function newTaskForm (index) {
     const form = document.createElement('form');
     form.classList.add('new-task-form');
     form.setAttribute('data-list', `${index}`);
@@ -226,22 +213,18 @@ function closeDescForm (e) {
         const project = allProjects[index];
         project.desc = 'No description required';
         localStorage.setItem('allProjectItems', JSON.stringify(allProjects));
-        updateRecentProjects()
-        displayProjectData(e);
+        showProject(e);
     } else return;
 }
-function closeProjectView (arr = []) {
+function closeProjectView (e) {
     const div = document.querySelector('.project-list-view');
     div.classList.remove('project-view');
-    div.innerHTML = '';
-    if (arr === allProjects) {
-        const projectDiv = document.createElement('div');
-        populateProjects(arr, projectDiv);
-        div.append(projectDiv);
-        document.querySelectorAll('div[data-list]')
-        .forEach(i => i.addEventListener('click', displayProjectData));
-    } else if (arr === dailyProjects) {
-        populateProjects(arr, div);
+    if (e.target.parentNode.parentNode.classList[1] === 'all-projects') {
+        div.innerHTML = '';
+        displayProjectElems();
+    } else if (e.target.parentNode.parentNode.classList[1] === 'daily-projects') {
+        div.innerHTML = '';
+        populateProjects(dailyProjects, div);
         const divs = document.querySelectorAll('div[data-list]');
         divs.forEach(i => i.addEventListener('click', displayTodayProjectData));
 
@@ -251,9 +234,8 @@ function deleteProject (e) {
     const index = e.target.dataset.list;
     if (confirm('Do you want to delete this project?\nThis cannot be undone.')) {
             allProjects.splice(index, 1);
-            updateRecentProjects();
             getDailyProjects();
-            if (e.target.parentNode.classList.contains('recent-projects')) {
+            if (e.target.parentNode.classList.contains('all-projects')) {
                 closeProjectView(allProjects);   
             } else if (e.target.parentNode.classList.contains('daily-projects')) {
                 closeProjectView(dailyProjects);
@@ -266,7 +248,6 @@ function setProjectDescription (e) {
     const index = e.target.getAttribute('data-list');
     const text = this.querySelector('textarea').value;
     allProjects[index].desc = text;
-    updateRecentProjects();
     localStorage.setItem('allProjectItems', JSON.stringify(allProjects)); 
-    displayProjectData(e);
+    showProject(e);
 }

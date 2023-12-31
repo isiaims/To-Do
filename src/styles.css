@@ -102,11 +102,11 @@ button {
     align-self: center;
     justify-self: end;
 }
-.project-list-view {
+.project-list-view, .task-list-view {
     grid-template: 1fr / 1fr;
     cursor: auto;
 }
-div[data-list], .has-task > div {
+div[data-list], div[data-num] {
     display:  flex;
     justify-content: space-between;
     gap: 5px;
@@ -175,7 +175,7 @@ button:hover {
     display: flex;
     flex-direction: column;
 }
-.has-task > div > p {
+div[data-num] > p {
     color: white;
     margin: 0;
 }
@@ -191,6 +191,10 @@ button:hover {
     flex-direction: column;
     gap: 5px;
     transition: none;
+}
+.close-task-view {
+    justify-self: end;
+    cursor: pointer;
 }
 footer {
     display: flex;

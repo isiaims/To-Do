@@ -1,17 +1,15 @@
 const allProjects = JSON.parse(localStorage.getItem('allProjectItems')) || [];
-const allTasks = [];
+const allTasks = JSON.parse(localStorage.getItem('allTasks')) || [];
 const today = new Date ();
 const dailyTasks = [];
-export let dailyProjects = getDailyProjects();
-let recentProjects = allProjects.slice(0, 5);
-export function updateRecentProjects () {recentProjects = allProjects.slice(0,5)};
+let dailyProjects = getDailyProjects();
 export function updateDailyProjects () {dailyProjects = getDailyProjects()};
 export function getDailyProjects () {
     let project = [];
     allProjects.forEach(i =>{
       i.task.forEach(u => {
-        let today = (new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())).toDateString();
-        if (u.runningDays.some(y => new Date (y).toDateString() == today)) {
+        let thisDay = (new Date(today.getFullYear(), today.getMonth(), today.getDate())).toDateString();
+        if (u.runningDays.some(y => new Date (y).toDateString() == thisDay)) {
           project.push(i);
         }
       })
@@ -74,24 +72,24 @@ class ProjectTask extends toDo {
     }
 }
 class Task extends toDo {
-    constructor (name, startDate, dueDate, severity) {
+    constructor (name) {
         super (name);
         this.desc = '';
-        this.startDate = startDate;
-        this.dueDate = dueDate;
-        this.severity = severity;
+        this.startDate = '';
+        this.dueDate = '';
+        this.severity = '';
     }
-    setDesc (data = []) {
-        this.desc = data[1].value;
+    setDesc (data) {
+        this.desc = data;
     }
-    setStartDate (data = []) {
-        this.desc = data[2].value;
+    setStartDate (data) {
+        this.desc = data;
     }
-    setEndDate (data = []) {
-        this.desc = data[3].value;
+    setEndDate (data) {
+        this.desc = data;
     }
-    setSeverity (data = []) {
-        this.severity = data[4].value;
+    setSeverity (data) {
+        this.severity = data;
     }
 }
 
@@ -99,7 +97,6 @@ export function collectProjectsData () {
     const projectName = document.querySelector('form.new-project-form > div > input');
     const project = new Project(projectName.value);
     allProjects.unshift(project);
-    updateRecentProjects();
     localStorage.setItem('allProjectItems', JSON.stringify(allProjects))
 }
 export function collectProjectTaskData() {
@@ -123,8 +120,14 @@ export function collectProjectTaskData() {
     allProjects[index].task.unshift(projectTask);
     (runningDays.some(i => new Date (i).toDateString() === new Date ().toDateString())) ?
     dailyProjects.push(allProjects[index]) : '';
-    updateRecentProjects();
     localStorage.setItem('allProjectItems', JSON.stringify(allProjects));
+}
+
+export function collectTaskData () {
+    const taskName = document.querySelector('form.add-task-form > div > input');
+    const project = new Task(taskName.value);
+    allTasks.unshift(project);
+    localStorage.setItem('allTasks', JSON.stringify(allTasks))
 }
 
 function getDatesBetween (startDate, endDate) {
@@ -150,4 +153,4 @@ function getDatesBetween (startDate, endDate) {
     return dates;
 };
 
-export {allProjects, recentProjects,};
+export {allProjects, allTasks, dailyProjects};

@@ -4,6 +4,7 @@ import {
 } from './interface';
 import { displayProjectElems } from './projects';
 import { displayTodayData } from './daily-week';
+import { displayTaskElements } from './tasks';
 
 
 makeBodyElements();
@@ -24,7 +25,9 @@ projectCategories.forEach(i => i.addEventListener('click', (e) => {
     if (target === projectCategories[0]) {
         makeActive(target);
         displayProjectElems();
-
+    } else if (target === projectCategories[1]) {
+        makeActive(target);
+        displayTaskElements();
     } else if (target === projectCategories[2]) {
         makeActive(target);
         displayTodayData();

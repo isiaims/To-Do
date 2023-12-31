@@ -1,4 +1,4 @@
-import { dailyProjects, updateDailyProjects } from "./logic";
+import { allProjects, dailyProjects, updateDailyProjects } from "./logic";
 import { populateProjects, showProject } from "./projects";
 
 function makeElem (name) {
@@ -38,8 +38,9 @@ export function displayTodayData () {
 }
 export function displayTodayProjectData(e) {
     const div = document.querySelector('.project-list-view');
-    showProject(e, div, dailyProjects);
+    showProject(e);
 }
+console.log(dailyProjects, allProjects)
 function displayTodayProjects () {
     const p = this.querySelector('p');
     const div = document.querySelector('.daily-projects');
