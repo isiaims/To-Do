@@ -196,6 +196,9 @@ div[data-num] > p {
     justify-self: end;
     cursor: pointer;
 }
+div.task-done {
+    background-color: green;
+}
 footer {
     display: flex;
     justify-content: end;

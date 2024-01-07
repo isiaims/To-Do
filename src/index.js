@@ -9,8 +9,6 @@ import { displayTaskElements } from './tasks';
 
 makeBodyElements();
 const content = document.querySelector('.content');
-const newProjectForm = content.querySelector('form');
-const allProjectDivs = content.querySelectorAll('.content > div');
 const projectCategories = [...document.querySelectorAll('.sidebar > h3')];
 
 makeActive(projectCategories[0]);

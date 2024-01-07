@@ -1,5 +1,5 @@
-import { displayTodayProjectData } from "./daily-week";
-import { allProjects, collectProjectsData, dailyProjects, getDailyProjects, toDo,} from "./logic";
+import { displayTodayProjectData, displayTodayProjects } from "./daily-week";
+import { allProjects, collectProjectTaskData, collectProjectsData, dailyProjects, getDailyProjects, toDo, updateDailyProjects,} from "./logic";
 
 export function makeFormFields (type, id) {
     const div = document.createElement('div');
@@ -65,7 +65,7 @@ export function populateProjects (arr = [], target) {
     } else {
         target.innerHTML = arr.map((item, i) => {
             return `
-                <div data-list = ${i}>
+                <div data-list = ${i} ts=${item.timeStamp}>
                     <p>${item.name}</p>
                     <p></p>
                     <p></p>
@@ -120,7 +120,9 @@ function projectView (index) {
 export function showProject (e) {
     if ((e.target.matches('div[data-list]')) || (e.target.matches('.close-desc-form'))) {
         const target = e.target;
-        const index = target.getAttribute('data-list');
+        let index = '';
+        allProjects.forEach(i => (i.timeStamp == target.getAttribute('ts')) ? 
+        index = allProjects.indexOf(i) : '');
         projectView(index);
 
         // Event Listener for setting project description
@@ -139,12 +141,6 @@ export function showProject (e) {
         .addEventListener('click', deleteProject);
     }
 }
-export function displayProjectTask (e) {
-    e.preventDefault();
-    collectProjectsData();
-    let index = e.target.getAttribute('data-list');
-    populateTaskDiv(allProjects[index].task, e.target.parentNode, index);
-}
 export function displayProjectElems () {
     const content = document.querySelector('.content');
     content.innerHTML = '';
@@ -155,7 +151,7 @@ export function displayProjectElems () {
     populateProjects(allProjects, div);
     content.append(newProjectForm(), div);
 
-    // Event Listener for displaying recently added project info
+    // Event Listener for displaying project info
     document.querySelectorAll('div[data-list]')
     .forEach(i => i.addEventListener('click', showProject));
 }
@@ -184,6 +180,15 @@ export function newTaskForm (index) {
     );
     form.addEventListener('submit', displayProjectTask);
     return form;
+}
+export function displayProjectTask (e) {
+    e.preventDefault();
+    let index = e.target.getAttribute('data-list');
+    allProjects[index].task.unshift(collectProjectTaskData());
+    updateDailyProjects();
+    localStorage.setItem('allProjectItems', JSON.stringify(allProjects));
+
+    populateTaskDiv(allProjects[index].task, e.target.parentNode, index);
 }
 export function populateTaskDiv (arr = [], target, data) {
     if (arr.length === 0) {
@@ -233,14 +238,14 @@ function closeProjectView (e) {
 function deleteProject (e) {
     const index = e.target.dataset.list;
     if (confirm('Do you want to delete this project?\nThis cannot be undone.')) {
-            allProjects.splice(index, 1);
-            getDailyProjects();
-            if (e.target.parentNode.classList.contains('all-projects')) {
-                closeProjectView(allProjects);   
-            } else if (e.target.parentNode.classList.contains('daily-projects')) {
-                closeProjectView(dailyProjects);
-            }    
-            localStorage.setItem('allProjectItems', JSON.stringify(allProjects)); 
+        allProjects.splice(index, 1);
+        getDailyProjects();
+        if (e.target.parentNode.classList.contains('all-projects')) {
+            displayProjectElems();   
+        } else if (e.target.parentNode.classList.contains('daily-projects')) {
+            displayTodayProjects();
+        }    
+        localStorage.setItem('allProjectItems', JSON.stringify(allProjects)); 
     } else return;
 }
 function setProjectDescription (e) {

@@ -40,8 +40,7 @@ export function displayTodayProjectData(e) {
     const div = document.querySelector('.project-list-view');
     showProject(e);
 }
-console.log(dailyProjects, allProjects)
-function displayTodayProjects () {
+export function displayTodayProjects () {
     const p = this.querySelector('p');
     const div = document.querySelector('.daily-projects');
     if (this.classList.contains('projects-open')) {
