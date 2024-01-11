@@ -1,9 +1,10 @@
 const allProjects = JSON.parse(localStorage.getItem('allProjectItems')) || [];
 const allTasks = JSON.parse(localStorage.getItem('allTasks')) || [];
 const today = new Date ();
-const dailyTasks = [];
+let dailyTasks = getDailyTasks();
 let dailyProjects = getDailyProjects();
 export function updateDailyProjects () {dailyProjects = getDailyProjects()};
+export function updateDailyTasks () {dailyTasks = getDailyTasks()};
 export function getDailyProjects () {
     let project = [];
     allProjects.forEach(i =>{
@@ -18,14 +19,31 @@ export function getDailyProjects () {
     project = [...new Set(project)];
     return project;
 }
-export function updateTaskDone () {allTasks.forEach(i => (i.status.time < Date.now) ? i.status.done = false : '')}
+export function getDailyTasks () {
+    let project = [];
+    allTasks.forEach(i =>{
+        let thisDay = (new Date(today.getFullYear(), today.getMonth(), today.getDate())).toDateString();
+        if ((i.runningDays.some(y => new Date (y).toDateString() == thisDay)) ||
+            ((new Date(i.startDate).getTime() < Date.now()) && 
+            (((new Date(i.dueDate).getTime() > Date.now())) || 
+            (i.dueDate === '')))) {
+          project.push(i);
+        }     
+    })
+    project = [...new Set(project)];
+    return project;
+}
+export function updateTaskDone () {
+    allTasks.forEach(i => (i.status.time < Date.now()) ? i.status.done = false : '');
+    localStorage.setItem('allTasks', JSON.stringify(allTasks));
+}
 export class toDo {
     static displayDate (ent, date) {
         if (ent == null || ent === "") {
             return `Task ${date}`;
         } else {
             ent = new Date (ent);
-            return `${ent.toLocaleDateString()} \n ${ent.toLocaleTimeString()}`;
+            return `${ent.toDateString()} \n ${ent.toLocaleTimeString()}`;
         }
     }
     static displaySeverity (ent) {
@@ -37,7 +55,22 @@ export class toDo {
         this.endDate = endDate;
     }
 }
-class Project extends toDo {
+export class Project extends toDo {
+    static displayDate (ent, date) {
+        if (ent == undefined) {
+            return `Project ${date}`;
+        } else {
+            ent = new Date (ent);
+            return `${ent.toDateString()}`;
+        }
+    }
+    static displayStats (ent) {
+        let done = 0;
+        for (let i = 0; i < ent.length; i++) {
+            ent[i].completed ? done += 1 : '';
+        }
+        return `Completed: ${done}/${ent.length}`
+    }
     constructor (name, timeStamp) {
         super(name);
         this.desc = '';
@@ -54,7 +87,7 @@ class ProjectTask extends toDo {
     constructor (name, startDate, endDate, severity) {
         super (name, startDate, endDate);
         this.severity = severity;
-        this.completed;
+        this.completed = false;
         this.runningDays = [];
     }
     setSeverity (data = []) {
@@ -112,6 +145,7 @@ export function collectProjectTaskData() {
         severity,
     );
     projectTask.setRunningDays(runningDays);
+    projectTask.completed = false;
     return projectTask;
 }
 
@@ -129,7 +163,7 @@ export function getDatesBetween (startDate, endDate) {
     let currentDate = new Date(
         startDate.getFullYear(),
         startDate.getMonth(),
-        startDate.getDate() + 1
+        startDate.getDate()
     );
 
     while (currentDate <= endDate) {
@@ -144,5 +178,16 @@ export function getDatesBetween (startDate, endDate) {
 
     return dates;
 };
-
-export {allProjects, allTasks, dailyProjects};
+export function getProjectDates () {
+    for (let i = 0; i < allProjects.length; i++) {
+        let runDays = [];
+        allProjects[i].task.forEach(
+          u => u.runningDays.forEach(a => runDays.push(a))
+        )
+        runDays = runDays.map(u => new Date(u).getTime())
+        .sort((a,b) => a - b);
+        allProjects[i].startDate = runDays[0];
+        allProjects[i].endDate = runDays[runDays.length - 1];
+    }
+}
+export {allProjects, allTasks, dailyProjects, dailyTasks};

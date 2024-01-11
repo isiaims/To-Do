@@ -1,5 +1,6 @@
-import { allProjects, dailyProjects, updateDailyProjects } from "./logic";
+import { allProjects, dailyProjects, dailyTasks, updateDailyProjects, updateDailyTasks, updateTaskDone } from "./logic";
 import { populateProjects, showProject } from "./projects";
+import { populateTasks, showTaskInfo, toggleDone } from "./tasks";
 
 function makeElem (name) {
     const elem = document.createElement('div');
@@ -51,23 +52,27 @@ export function displayTodayProjects () {
         populateProjects(dailyProjects, div);
         p.innerHTML = '▲';
 
-        const divs = document.querySelectorAll('div[data-list]');
-        divs.forEach(i => i.addEventListener('click', displayTodayProjectData));
+        document.querySelectorAll('div[data-list]')
+        .forEach(i => i.addEventListener('click', displayTodayProjectData));
     }
     this.classList.toggle('projects-open');
 }
-function displayTodayTasks (e) {
+export function displayTodayTasks () {
     const div = document.querySelector('.daily-tasks');
     const p = this.querySelector('p');
     if (this.classList.contains('tasks-open')) {
         div.innerHTML = '';
         p.innerHTML = '▼';
     } else {
-        // populateProjects(dailyProjects, div);
+        updateTaskDone();
+        updateDailyTasks();
+        populateTasks(dailyTasks, div);
         p.innerHTML = '▲';
-
-        // const divs = document.querySelectorAll('div[data-list]');
-        // divs.forEach(i => i.addEventListener('click', displayTodayProjectData));
-    }
+    
+        document.querySelectorAll('button.edit-task')
+        .forEach(i => i.addEventListener('click', showTaskInfo));
+        document.querySelectorAll(`input[type='checkbox']`)
+        .forEach(i => i.addEventListener('click', toggleDone));
+        }
     this.classList.toggle('tasks-open');
 }

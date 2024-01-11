@@ -1,4 +1,5 @@
-import { Task, allTasks, collectTaskData, getDatesBetween, updateTaskDone } from "./logic";
+import { displayTodayTasks } from "./daily-week";
+import { Task, allTasks, collectTaskData, dailyTasks, getDatesBetween, updateTaskDone } from "./logic";
 import { makeFormFields, makeRadioElems } from "./projects";
 
 function newTaskForm () {
@@ -19,21 +20,25 @@ function addNewTask (e) {
     displayTaskElements();
 
     e.preventDefault();
-    console.log(e);
 }
 function taskInfoView (index) {
+    let item = allTasks[index];
+    const taskListDiv = document.querySelector('.task-list-view');
+    taskListDiv.innerHTML = '';
+
     const form = document.createElement('form');
     form.classList.add('new-task-form');
     form.setAttribute('data-num', index);
+    form.setAttribute('ts', `${item.timeStamp}`);
     const closeForm = document.createElement('p');
     closeForm.classList.add('close-task-view');
     closeForm.innerHTML = '&cross;';
     closeForm.setAttribute('data-num', index);
+    closeForm.addEventListener('click', closeTaskView);
     const button = document.createElement('button');
     button.innerText = 'Done';
     button.type = 'submit';
     button.setAttribute('data-num', index);
-    let item = allTasks[index];
     const fieldset = document.createElement('fieldset');
     const legend = document.createElement('legend');
     legend.innerHTML = 'Severity Level';
@@ -64,10 +69,18 @@ function taskInfoView (index) {
     form.querySelector(`input[id='task-end-time']`).value = item.dueTime : '';
     (item.dueDate != "") ? 
     form.querySelector(`input[id='task-end-date']`).value = item.dueDate : '';
+    form.querySelectorAll(`input[type='radio']`).forEach(
+        i => (i.value === item.severity) ? i.setAttribute('checked', '') : ''
+    );
 
     form.addEventListener('submit', updateTaskData);
-    form.addEventListener('click', closeTaskView);
-    return form;
+
+    const deleteButton = document.createElement('button');
+    deleteButton.classList.add('delete-task');
+    deleteButton.innerText = 'Delete Task';
+    deleteButton.setAttribute('ts', `${item.timeStamp}`);
+    deleteButton.addEventListener('click', deleteTask);
+    taskListDiv.append(form, deleteButton);
 }
 function updateTaskData (e) {
     e.preventDefault();
@@ -78,20 +91,30 @@ function updateTaskData (e) {
     const dT = this.querySelector(`input[id='task-end-time']`).value;
     const dD = this.querySelector(`input[id='task-end-date']`).value;
     const sev = this.querySelectorAll(`input[type='radio']`);
+    let severity;
+    sev.forEach(i => (i.checked) ? severity = i.value : '');
     const index = e.target.getAttribute('data-num');
     let newSD = new Date(sD);
     let newDD = new Date(dD);
-    Task.setDetails([name, desc, sD, sT, dT, dD, sev, getDatesBetween(newSD, newDD)], allTasks[index]);
+    Task.setDetails([name, desc, sD, sT, dT, dD, severity, getDatesBetween(newSD, newDD)], allTasks[index]);
     localStorage.setItem('allTasks', JSON.stringify(allTasks));
-    showTaskInfo(e );
+    showTaskInfo(e);
 }
 function closeTaskView (e) {
     if (!e.target.matches('.close-task-view')) return;
-    (e.target.parentElement.parentElement.classList[1] === 'all-tasks') ?
-    displayTaskElements() : '';
+    if (e.target.parentElement.parentElement.classList[1] === 'all-tasks') {
+        displayTaskElements()
+    } else if (e.target.parentElement.parentElement.classList[1] === 'daily-tasks') {
+        let div = e.target.parentElement.parentElement;
+        div.innerHTML = '';
+        populateTasks(dailyTasks, div);
+        document.querySelectorAll('button.edit-task')
+        .forEach(i => i.addEventListener('click', showTaskInfo));
+        document.querySelectorAll(`input[type='checkbox']`)
+        .forEach(i => i.addEventListener('click', toggleDone));
+    }
 }
-function populateTasks (arr = [], target) {
-    updateTaskDone();
+export function populateTasks (arr = [], target) {
     if (arr.length === 0) {
         target.innerHTML =  `
             <p> There are no tasks available</p>
@@ -101,21 +124,23 @@ function populateTasks (arr = [], target) {
             return `
                 <div data-num = ${i} ${item.status.done ? 'class="task-done"': ''}>
                     <p>${item.name}</p>
-                    <p></p>
+                    <p>${item.startTime}</p>
+                    <p>${item.dueTime}</p>
                     <input type='checkbox' id='done${i}' name='done' ${item.status.done ? 'checked' : ''}></input>
-                    <button class='edit-task' data-num = ${i}>Edit Task</button>
+                    <button class='edit-task' data-num = ${i} ts=${item.timeStamp}>Edit Task</button>
                 </div>
             `;
         }).join('');
     }
 }
-function showTaskInfo (e) {
-    const taskListDiv = document.querySelector('.task-list-view');
-    taskListDiv.innerHTML = '';
-    const dataNum = e.target.getAttribute('data-num');
-    taskListDiv.append(taskInfoView(dataNum));
+export function showTaskInfo (e) {
+    const ts = e.target.getAttribute('ts');
+    let dataNum = 0;
+    allTasks.forEach(i => (i.timeStamp == ts) ? dataNum = allTasks.indexOf(i) : '');
+
+    taskInfoView(dataNum);
 }
-function toggleDone () {
+export function toggleDone () {
     let index = this.parentElement.getAttribute('data-num');
     allTasks[index].status.done = !allTasks[index].status.done;
     if (allTasks[index].status.done)  {
@@ -131,6 +156,26 @@ function getMidnight () {
     let r = new Date ();
     return new Date (r.getFullYear(), r.getMonth(), r.getDate() + 1).getTime();
 }
+function deleteTask (e) {
+    const ts = e.target.getAttribute('ts');
+    if (confirm('Do you want to delete this Task?\nThis cannot be undone.')) {
+        let index = '';
+        allTasks.forEach(i => i.timeStamp == ts ? index = allTasks.indexOf(i) : '');
+        // allTasks.splice(index, 1);
+        if (e.target.parentNode.classList.contains('all-tasks')) {
+            displayTaskElements()   
+        } else if (e.target.parentNode.classList.contains('daily-tasks')) {
+            let div = e.target.parentElement;
+            div.innerHTML = '';
+            populateTasks(dailyTasks, div);
+            document.querySelectorAll('button.edit-task')
+            .forEach(i => i.addEventListener('click', showTaskInfo));
+            document.querySelectorAll(`input[type='checkbox']`)
+            .forEach(i => i.addEventListener('click', toggleDone));    
+        }    
+        localStorage.setItem('allTasks', JSON.stringify(allTasks));
+    } else return;
+}
 export function displayTaskElements () {
     const content = document.querySelector('.content');
     content.innerHTML = '';
@@ -138,6 +183,7 @@ export function displayTaskElements () {
     div.classList.add('task-list-view');
     div.classList.add('all-tasks');
     div.classList.remove('task-view');
+    updateTaskDone();
     populateTasks(allTasks, div);
     content.append(newTaskForm(0), div);
 

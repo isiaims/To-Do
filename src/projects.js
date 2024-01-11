@@ -1,5 +1,5 @@
 import { displayTodayProjectData, displayTodayProjects } from "./daily-week";
-import { allProjects, collectProjectTaskData, collectProjectsData, dailyProjects, getDailyProjects, toDo, updateDailyProjects,} from "./logic";
+import { Project, allProjects, collectProjectTaskData, collectProjectsData, dailyProjects, getDailyProjects, getDatesBetween, getProjectDates, toDo, updateDailyProjects,} from "./logic";
 
 export function makeFormFields (type, id) {
     const div = document.createElement('div');
@@ -67,8 +67,10 @@ export function populateProjects (arr = [], target) {
             return `
                 <div data-list = ${i} ts=${item.timeStamp}>
                     <p>${item.name}</p>
-                    <p></p>
-                    <p></p>
+                    <p>from</p>
+                    <p>${Project.displayDate(item.startDate, 'Start Date')}</p>
+                    <p>to</p>
+                    <p>${Project.displayDate(item.endDate, 'Due Date')}</p>
                 </div>
             `;
         }).join('');
@@ -89,7 +91,11 @@ function projectView (index) {
     const div = document.createElement('div');
     div.classList.add('info');
     const start = document.createElement('p');
+    start.innerHTML = 'Start Date: ' + Project.displayDate(item.startDate, 'Start Date');
     const due = document.createElement('p');
+    due.innerHTML = 'Due Date: ' + Project.displayDate(item.endDate, 'Due Date');
+    const stats = document.createElement('p');
+    stats.innerHTML = Project.displayStats(item.task);
     const desc = document.createElement('p');
     desc.classList.add('project-description' );
     if (item.desc === '') {
@@ -100,15 +106,16 @@ function projectView (index) {
                     <textarea name="desc" id="desc" cols="30" rows="3"></textarea>
                 </div>
                 <div>
-                    <p class='close-desc-form' data-list=${index}>&cross;</p>
+                    <p class='close-desc-form' data-list=${index} ts=${item.timeStamp}>&cross;</p>
                     <button type='submit'>Submit</button>
                 </div>
             </form>
         `
     } else {desc.innerHTML = item.desc};
-    div.append(start, due, desc);
+    div.append(start, due, stats, desc);
     const taskDiv = document.createElement('div');
     taskDiv.classList.add('task-div');
+    taskDiv.setAttribute('ts', `${item.timeStamp}`)
     populateTaskDiv(item.task, taskDiv, index);
     const deleteProjectButton = document.createElement('button');
     deleteProjectButton.innerHTML = 'Delete Project';
@@ -116,11 +123,19 @@ function projectView (index) {
     deleteProjectButton.setAttribute('data-list', `${index}`);
     targetDiv.append(header, div, taskDiv, deleteProjectButton);
 
+    document.querySelector('form.new-task-form').addEventListener('submit', displayProjectTask);
+    document.querySelectorAll('.edit-task')
+    .forEach(i => i.addEventListener('click', editTask));
+    document.querySelectorAll('.remove-task')
+    .forEach(i => i.addEventListener('click', removeTask));
+    document.querySelectorAll(`input[type='checkbox']`)
+    .forEach(i => i.addEventListener('click', toggleDone));
 }
 export function showProject (e) {
-    if ((e.target.matches('div[data-list]')) || (e.target.matches('.close-desc-form'))) {
+    if (e.target.matches('[ts]')) {
         const target = e.target;
         let index = '';
+        getProjectDates();    
         allProjects.forEach(i => (i.timeStamp == target.getAttribute('ts')) ? 
         index = allProjects.indexOf(i) : '');
         projectView(index);
@@ -148,6 +163,7 @@ export function displayProjectElems () {
     div.classList.add('project-list-view');
     div.classList.add('all-projects');
     div.classList.remove('project-view');
+    getProjectDates();
     populateProjects(allProjects, div);
     content.append(newProjectForm(), div);
 
@@ -178,7 +194,6 @@ export function newTaskForm (index) {
         fieldset,
         button,
     );
-    form.addEventListener('submit', displayProjectTask);
     return form;
 }
 export function displayProjectTask (e) {
@@ -186,9 +201,16 @@ export function displayProjectTask (e) {
     let index = e.target.getAttribute('data-list');
     allProjects[index].task.unshift(collectProjectTaskData());
     updateDailyProjects();
+    getProjectDates();
     localStorage.setItem('allProjectItems', JSON.stringify(allProjects));
 
     populateTaskDiv(allProjects[index].task, e.target.parentNode, index);
+    document.querySelectorAll('.edit-task')
+    .forEach(i => i.addEventListener('click', editTask));
+    document.querySelectorAll('.remove-task')
+    .forEach(i => i.addEventListener('click', removeTask));
+    document.querySelectorAll(`input[type='checkbox']`)
+    .forEach(i => i.addEventListener('click', toggleDone));
 }
 export function populateTaskDiv (arr = [], target, data) {
     if (arr.length === 0) {
@@ -197,14 +219,15 @@ export function populateTaskDiv (arr = [], target, data) {
         target.classList.add('has-task');
         target.innerHTML = arr.map((item, i) => {
             return `
-                <div data-num = ${i}>
+                <div data-num = ${i} ${item.completed ? 'class="task-done"' : ''}>
                     <p>${item.name}</p>
                     <p>${toDo.displayDate(item.startDate, 'Start Date')}</p>
                     <p>${toDo.displayDate(item.endDate, 'End Date')}</p>
                     <p>${toDo.displaySeverity(item.severity)}</p>
-                    <input data-num=${i} type='checkbox' name='completed' id='completed${i}'>
+                    <input data-num=${i} type='checkbox' name='completed' id='completed${i}'
+                    ts=${target.getAttribute('ts')} ${item.completed ? 'checked' : ''}>
                     <button class='edit-task' data-num = ${i}>Edit Task</button>
-                    <button class='remove-task' data-num = ${i}>Remove Task</button>
+                    <button class='remove-task' data-num = ${i} ts=${target.getAttribute('ts')}>Remove Task</button>
                 </div>
             `;
         }).join('');
@@ -220,6 +243,81 @@ function closeDescForm (e) {
         localStorage.setItem('allProjectItems', JSON.stringify(allProjects));
         showProject(e);
     } else return;
+}
+function editTask (e) {
+    const target = e.target;
+    const projTs = target.parentElement.parentElement.getAttribute('ts');
+    let projIndex = 0;
+    allProjects.forEach(i => i.timeStamp == projTs ? projIndex = allProjects.indexOf(i) : '');
+    const taskIndex = target.getAttribute('data-num');
+    const task = allProjects[projIndex].task[taskIndex];
+    let div = target.parentElement;
+    div.innerHTML = '';
+    div.append(newTaskForm(taskIndex));
+    const form = document.querySelector('div[data-num] > form');
+    form.classList.add('edit-form');
+    form.setAttribute('ts', `${projTs}`);
+    const button = document.querySelector('div[data-num] > form > button');
+    button.innerHTML = 'Update Task Info';
+    const taskName =  document.querySelector(`div[data-num] > form input#task-name`);
+    taskName.value = task.name;
+    const taskStartDate = document.querySelector(`div[data-num] > form input#task-start-date`);
+    taskStartDate.value = task.startDate;
+    const taskEndDate = document.querySelector(`div[data-num] > form input#task-end-date`);
+    taskEndDate.value = task.endDate;
+    const taskSeverity = document.querySelectorAll(`div[data-num] > form input[type='radio']`);
+    taskSeverity.forEach(
+        i => (i.value === task.severity) ? i.setAttribute('checked', '') : ''
+    );
+    document.querySelectorAll('.edit-task')
+    .forEach(i => i.setAttribute('disabled', ''));
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        task.name = taskName.value;
+        task.startDate = taskStartDate.value;
+        task.endDate = taskEndDate.value;    
+        let severity;
+        taskSeverity.forEach(i => (i.checked) ? severity = i.value : '');
+        task.severity = severity;
+        task.runningDays = getDatesBetween(new Date(taskStartDate.value), new Date (taskEndDate.value));
+        updateDailyProjects();
+        localStorage.setItem('allProjectItems', JSON.stringify(allProjects));
+
+        document.querySelectorAll('.edit-task')
+        .forEach(i => i.removeAttribute('disabled'));
+        showProject(e)
+    });
+}
+function removeTask (e) {
+    const target = e.target;
+    const projTs = target.getAttribute('ts');
+    let projIndex = 0;
+    allProjects.forEach(i => i.timeStamp == projTs ? projIndex = allProjects.indexOf(i) : '');
+    const taskIndex = target.getAttribute('data-num');
+    confirm('Do you want to delete this project?\nThis cannot be undone.') ?
+    allProjects[projIndex].task.splice(taskIndex, 1) : '';
+    showProject(e);
+    localStorage.setItem('allProjectItems', JSON.stringify(allProjects));
+}
+export function toggleDone (e) {
+    const ts = this.getAttribute('ts');
+    let projIndex = 0;
+    allProjects.forEach(i => i.timeStamp == ts ? projIndex = allProjects.indexOf(i) : '');
+    const taskIndex = this.getAttribute('data-num');
+    const task = allProjects[projIndex].task[taskIndex];
+    task.completed = !task.completed;
+    if (task.completed)  {
+        this.parentElement.classList.add('task-done');
+        let a = allProjects[projIndex].task.splice(taskIndex, 1);
+        allProjects[projIndex].task.push(a[0]);
+    } else {
+        this.parentElement.classList.remove('task-done');
+        let a = allProjects[projIndex].task.splice(taskIndex, 1);
+        allProjects[projIndex].task.unshift(a[0]);
+    }
+    showProject(e);
+    localStorage.setItem('allProjectItems', JSON.stringify(allProjects));
 }
 function closeProjectView (e) {
     const div = document.querySelector('.project-list-view');

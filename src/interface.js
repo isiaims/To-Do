@@ -30,7 +30,6 @@ function sideBarElements () {
         makeElem('All Projects'),
         makeElem('All Tasks'),
         makeElem('Today'),
-        makeElem('This Week'),
     )
 };
 function footerElements () {
