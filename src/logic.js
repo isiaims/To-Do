@@ -43,7 +43,7 @@ export class toDo {
             return `Task ${date}`;
         } else {
             ent = new Date (ent);
-            return `${ent.toDateString()} \n ${ent.toLocaleTimeString()}`;
+            return `${ent.toDateString()}`;
         }
     }
     static displaySeverity (ent) {

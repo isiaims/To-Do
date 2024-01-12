@@ -71,6 +71,7 @@ export function populateProjects (arr = [], target) {
                     <p>${Project.displayDate(item.startDate, 'Start Date')}</p>
                     <p>to</p>
                     <p>${Project.displayDate(item.endDate, 'Due Date')}</p>
+                    <button data-list = ${i} ts=${item.timeStamp}>Edit Project</button>
                 </div>
             `;
         }).join('');
@@ -100,14 +101,14 @@ function projectView (index) {
     desc.classList.add('project-description' );
     if (item.desc === '') {
         desc.innerHTML = `
-            <form data-list=${index}>
+            <form data-list=${index} ts=${item.timeStamp}>
                 <div>
                     <label for='desc'>Add Project Description:</label>
                     <textarea name="desc" id="desc" cols="30" rows="3"></textarea>
                 </div>
                 <div>
                     <p class='close-desc-form' data-list=${index} ts=${item.timeStamp}>&cross;</p>
-                    <button type='submit'>Submit</button>
+                    <button type='submit' ts=${item.timeStamp}>Submit</button>
                 </div>
             </form>
         `
@@ -189,8 +190,8 @@ export function newTaskForm (index) {
     )
     form.append(
         makeFormFields('text', 'task-name'),
-        makeFormFields('datetime-local', 'task-start-date'),
-        makeFormFields('datetime-local', 'task-end-date'),
+        makeFormFields('date', 'task-start-date'),
+        makeFormFields('date', 'task-end-date'),
         fieldset,
         button,
     );
@@ -200,11 +201,13 @@ export function displayProjectTask (e) {
     e.preventDefault();
     let index = e.target.getAttribute('data-list');
     allProjects[index].task.unshift(collectProjectTaskData());
+    this.setAttribute('ts', `${allProjects[index].timeStamp}`);
     updateDailyProjects();
     getProjectDates();
     localStorage.setItem('allProjectItems', JSON.stringify(allProjects));
 
     populateTaskDiv(allProjects[index].task, e.target.parentNode, index);
+    showProject(e);
     document.querySelectorAll('.edit-task')
     .forEach(i => i.addEventListener('click', editTask));
     document.querySelectorAll('.remove-task')

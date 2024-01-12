@@ -168,7 +168,7 @@ div[data-list], div[data-num] {
 }
 div[data-list] {
     display:  grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     transition: transform 0.5s;
     color: var(--color);
 }

@@ -29,7 +29,5 @@ projectCategories.forEach(i => i.addEventListener('click', (e) => {
     } else if (target === projectCategories[2]) {
         makeActive(target);
         displayTodayData();
-    } else if (target === projectCategories[3]) {
-        makeActive(target);
     }
 }));
