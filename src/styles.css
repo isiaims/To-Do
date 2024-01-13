@@ -180,6 +180,11 @@ button:hover, .sidebar > h3:hover, .sidebar > h3.active,
     background-color: var(--bg-color1);
     color: var(--color);
 }
+.sidebar > h3.active {
+    transform: scale(1.0, 1.1);
+    background-color: var(--bg-color1);
+    color: var(--color);
+}
 .project-view {
     cursor: auto;
 }
